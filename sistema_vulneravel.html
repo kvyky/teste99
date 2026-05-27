@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CorpSys — Sistema de Gestão</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e2a;
+    --border: #252a38;
+    --accent: #00e5a0;
+    --accent2: #ff4c6a;
+    --accent3: #4c8fff;
+    --warn: #ffb830;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOPBAR ── */
+  #topbar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  #topbar .brand { font-family: var(--mono); font-weight: 600; color: var(--accent); font-size: 15px; letter-spacing: 1px; }
+  #topbar .nav { display: flex; gap: 4px; }
+  #topbar .nav button {
+    background: none; border: none; color: var(--muted);
+    font-family: var(--sans); font-size: 13px; padding: 6px 14px;
+    border-radius: 6px; cursor: pointer; transition: all .2s;
+  }
+  #topbar .nav button:hover, #topbar .nav button.active { background: var(--surface2); color: var(--text); }
+  #topbar .user-info { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+  #topbar .user-info span { color: var(--accent); font-weight: 600; }
+  #topbar .logout-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    font-size: 12px; padding: 4px 10px; border-radius: 5px; cursor: pointer; transition: .2s;
+  }
+  #topbar .logout-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ── LOGIN PAGE ── */
+  #login-page {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(0,229,160,.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(76,143,255,.06) 0%, transparent 50%);
+  }
+  .login-box {
+    width: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 24px 80px rgba(0,0,0,.5);
+  }
+  .login-box .logo { font-family: var(--mono); font-size: 20px; color: var(--accent); margin-bottom: 8px; }
+  .login-box .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
+  .login-box label { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .login-box input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--mono); font-size: 14px;
+    padding: 10px 14px; border-radius: 7px; outline: none; transition: .2s; margin-bottom: 20px;
+  }
+  .login-box input:focus { border-color: var(--accent); }
+  .login-btn {
+    width: 100%; padding: 12px; background: var(--accent); color: #000;
+    font-family: var(--sans); font-weight: 700; font-size: 14px; border: none;
+    border-radius: 7px; cursor: pointer; transition: .2s; letter-spacing: .5px;
+  }
+  .login-btn:hover { filter: brightness(1.1); }
+  #login-error { display: none; margin-top: 16px; padding: 10px 14px; background: rgba(255,76,106,.1); border: 1px solid rgba(255,76,106,.3); border-radius: 7px; font-size: 13px; color: var(--accent2); }
+  .login-hint { margin-top: 20px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 16px; line-height: 1.7; }
+  .login-hint code { font-family: var(--mono); color: var(--warn); font-size: 11px; }
+
+  /* ── MAIN PANEL ── */
+  #main-panel { display: none; flex: 1; }
+  .page { display: none; padding: 32px; }
+  .page.active { display: block; }
+  .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+  /* ── CARDS ── */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 16px; margin-bottom: 32px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px;
+  }
+  .card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .card .value { font-size: 28px; font-weight: 700; font-family: var(--mono); }
+  .card.green .value { color: var(--accent); }
+  .card.red .value { color: var(--accent2); }
+  .card.blue .value { color: var(--accent3); }
+
+  /* ── TABLES ── */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 28px; }
+  .table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .table-header h3 { font-size: 14px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; text-align: left; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+  td { padding: 13px 20px; font-size: 13px; border-bottom: 1px solid rgba(37,42,56,.5); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: .3px;
+  }
+  .badge.admin { background: rgba(255,184,48,.15); color: var(--warn); }
+  .badge.user  { background: rgba(76,143,255,.15); color: var(--accent3); }
+  .badge.active { background: rgba(0,229,160,.15); color: var(--accent); }
+  .badge.inactive { background: rgba(255,76,106,.15); color: var(--accent2); }
+
+  /* ── FORMS ── */
+  .form-section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+  .form-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 18px; color: var(--accent); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .form-group input, .form-group select, .form-group textarea {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--sans); font-size: 14px;
+    padding: 10px 14px; border-radius: 7px; outline: none; transition: .2s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-group select option { background: var(--surface2); }
+  .btn { padding: 10px 20px; border-radius: 7px; font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: .2s; border: none; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-danger { background: rgba(255,76,106,.15); color: var(--accent2); border: 1px solid rgba(255,76,106,.3); }
+  .btn-danger:hover { background: rgba(255,76,106,.25); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* ── SEARCH ── */
+  .search-bar-wrap { display: flex; gap: 12px; margin-bottom: 20px; }
+  .search-bar-wrap input {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--mono); font-size: 13px;
+    padding: 10px 16px; border-radius: 7px; outline: none; transition: .2s;
+  }
+  .search-bar-wrap input:focus { border-color: var(--accent3); }
+
+  /* ── VULN LAB ── */
+  #vuln-notice {
+    background: rgba(255,184,48,.07); border: 1px solid rgba(255,184,48,.3);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 28px; display: flex; gap: 14px; align-items: flex-start;
+  }
+  #vuln-notice .icon { font-size: 22px; }
+  #vuln-notice p { font-size: 13px; color: var(--warn); line-height: 1.7; }
+  #vuln-notice strong { color: var(--text); }
+  .lab-section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+  .lab-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+  .lab-header h3 { font-size: 14px; font-weight: 600; }
+  .diff-tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: .5px; }
+  .diff-easy   { background: rgba(0,229,160,.15); color: var(--accent); }
+  .diff-medium { background: rgba(255,184,48,.15); color: var(--warn); }
+  .diff-hard   { background: rgba(255,76,106,.15); color: var(--accent2); }
+  .lab-body { padding: 20px; }
+  .lab-body p { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
+  .lab-body code { font-family: var(--mono); font-size: 12px; color: var(--warn); background: rgba(255,184,48,.08); padding: 2px 6px; border-radius: 4px; }
+  .lab-hint { font-size: 12px; color: var(--accent3); margin-bottom: 14px; border-left: 2px solid var(--accent3); padding-left: 10px; }
+  .lab-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 10px 14px; border-radius: 7px; outline: none; margin-bottom: 10px; }
+  .lab-input:focus { border-color: var(--warn); }
+  .lab-output { min-height: 40px; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 12px 14px; font-family: var(--mono); font-size: 12px; color: var(--text); margin-top: 10px; word-break: break-all; }
+  .lab-output.success { border-color: var(--accent); background: rgba(0,229,160,.05); }
+  .lab-output.error   { border-color: var(--accent2); background: rgba(255,76,106,.05); }
+
+  /* modal */
+  #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
+  #modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 32px; width: 460px; max-width: 95vw; }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ TOPBAR ══════════════ -->
+<div id="topbar">
+  <div class="brand">CORP<span style="color:var(--text)">SYS</span></div>
+  <div class="nav">
+    <button onclick="showPage('dashboard')" id="nav-dashboard" class="active">Dashboard</button>
+    <button onclick="showPage('usuarios')" id="nav-usuarios">Usuários</button>
+    <button onclick="showPage('produtos')" id="nav-produtos">Produtos</button>
+    <button onclick="showPage('relatorios')" id="nav-relatorios">Relatórios</button>
+    <button onclick="showPage('lab')" id="nav-lab" style="color:var(--warn)">⚠ Lab Vuln</button>
+  </div>
+  <div class="user-info">
+    Logado como <span id="current-user-display">—</span>
+    <button class="logout-btn" onclick="doLogout()">Sair</button>
+  </div>
+</div>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="logo">▶ CORPSYS</div>
+    <div class="subtitle">Sistema de Gestão Corporativa v2.4</div>
+    <label>Usuário</label>
+    <input type="text" id="login-user" placeholder="usuário" autocomplete="off">
+    <label>Senha</label>
+    <input type="password" id="login-pass" placeholder="••••••••">
+    <button class="login-btn" onclick="doLogin()">ENTRAR</button>
+    <div id="login-error">Credenciais inválidas. Tente novamente.</div>
+    <div class="login-hint">
+      <strong>Credenciais de acesso:</strong><br>
+      Admin: <code>admin</code> / <code>admin123</code><br>
+      User:  <code>joao</code> / <code>senha123</code><br>
+      User:  <code>maria</code> / <code>maria456</code><br>
+      <br>
+      <strong style="color:var(--warn)">⚠ Dica de segurança:</strong> este sistema contém vulnerabilidades intencionais para fins didáticos.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN PANEL ══════════════ -->
+<div id="main-panel">
+
+  <!-- DASHBOARD -->
+  <div class="page" id="page-dashboard">
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Visão geral do sistema</div>
+    <div class="cards">
+      <div class="card green"><div class="label">Usuários Ativos</div><div class="value">5</div></div>
+      <div class="card blue"><div class="label">Produtos</div><div class="value">8</div></div>
+      <div class="card"><div class="label">Pedidos (mês)</div><div class="value">142</div></div>
+      <div class="card red"><div class="label">Alertas</div><div class="value">3</div></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header"><h3>Acessos Recentes</h3></div>
+      <table>
+        <thead><tr><th>Usuário</th><th>IP</th><th>Horário</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>admin</td><td>192.168.1.1</td><td>hoje, 09:14</td><td><span class="badge active">OK</span></td></tr>
+          <tr><td>joao</td><td>10.0.0.22</td><td>hoje, 08:55</td><td><span class="badge active">OK</span></td></tr>
+          <tr><td>???</td><td>203.0.113.77</td><td>ontem, 23:47</td><td><span class="badge inactive">FALHA</span></td></tr>
+          <tr><td>maria</td><td>10.0.0.45</td><td>ontem, 17:30</td><td><span class="badge active">OK</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- USUÁRIOS -->
+  <div class="page" id="page-usuarios">
+    <div class="page-title">Usuários</div>
+    <div class="page-sub">Gerenciamento de contas do sistema</div>
+
+    <div class="form-section">
+      <h3>Adicionar Usuário</h3>
+      <div class="form-grid">
+        <div class="form-group"><label>Nome</label><input type="text" id="u-nome" placeholder="Nome completo"></div>
+        <div class="form-group"><label>Login</label><input type="text" id="u-login" placeholder="nome_usuario"></div>
+        <div class="form-group"><label>Senha</label><input type="text" id="u-senha" placeholder="senha em texto plano"></div>
+        <div class="form-group"><label>Perfil</label>
+          <select id="u-perfil"><option value="user">Usuário</option><option value="admin">Administrador</option></select>
+        </div>
+        <div class="form-group"><label>E-mail</label><input type="text" id="u-email" placeholder="email@empresa.com"></div>
+        <div class="form-group"><label>Departamento</label><input type="text" id="u-dept" placeholder="TI, RH, Financeiro..."></div>
+      </div>
+      <br><button class="btn btn-primary" onclick="addUser()">Adicionar Usuário</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header"><h3>Usuários Cadastrados</h3><small style="color:var(--muted)">Inclui senhas em texto plano — vulnerabilidade intencional</small></div>
+      <table>
+        <thead><tr><th>ID</th><th>Nome</th><th>Login</th><th>Senha</th><th>E-mail</th><th>Perfil</th><th>Dept</th><th>Ações</th></tr></thead>
+        <tbody id="user-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PRODUTOS -->
+  <div class="page" id="page-produtos">
+    <div class="page-title">Produtos</div>
+    <div class="page-sub">Catálogo e estoque</div>
+
+    <div class="form-section">
+      <h3>Cadastrar Produto</h3>
+      <div class="form-grid">
+        <div class="form-group"><label>Nome</label><input type="text" id="p-nome" placeholder="Nome do produto"></div>
+        <div class="form-group"><label>Categoria</label><input type="text" id="p-cat" placeholder="Eletrônicos, Software..."></div>
+        <div class="form-group"><label>Preço (R$)</label><input type="number" id="p-preco" placeholder="0.00"></div>
+        <div class="form-group"><label>Estoque</label><input type="number" id="p-estoque" placeholder="0"></div>
+        <div class="form-group full"><label>Descrição</label><textarea id="p-desc" placeholder="Descrição do produto..."></textarea></div>
+      </div>
+      <br><button class="btn btn-primary" onclick="addProduto()">Cadastrar Produto</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header"><h3>Produtos Cadastrados</h3></div>
+      <table>
+        <thead><tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Ações</th></tr></thead>
+        <tbody id="produto-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RELATÓRIOS -->
+  <div class="page" id="page-relatorios">
+    <div class="page-title">Relatórios</div>
+    <div class="page-sub">Busca e consulta de dados</div>
+
+    <!-- VULNERÁVEL: SQL injection simulado via busca de usuários -->
+    <div class="form-section">
+      <h3>🔍 Busca de Usuários <span style="font-size:11px;color:var(--accent2);font-weight:400">(endpoint vulnerável a SQL Injection)</span></h3>
+      <div class="search-bar-wrap">
+        <input type="text" id="report-search" placeholder="Digite nome ou login para buscar...">
+        <button class="btn btn-primary" onclick="reportSearch()">Buscar</button>
+      </div>
+      <div class="lab-output" id="report-output" style="min-height:60px;">Digite algo para buscar.</div>
+    </div>
+
+    <!-- VULNERÁVEL: XSS em comentários -->
+    <div class="form-section">
+      <h3>💬 Mural de Avisos <span style="font-size:11px;color:var(--accent2);font-weight:400">(endpoint vulnerável a XSS)</span></h3>
+      <div class="form-group full" style="margin-bottom:12px;">
+        <label>Novo aviso</label>
+        <textarea id="aviso-input" rows="2" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--sans);font-size:14px;padding:10px 14px;border-radius:7px;outline:none;resize:vertical;" placeholder="Escreva um aviso..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="postAviso()">Publicar Aviso</button>
+      <div id="avisos-list" style="margin-top:20px;display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+  </div>
+
+  <!-- LAB DE VULNERABILIDADES -->
+  <div class="page" id="page-lab">
+    <div class="page-title">⚠ Laboratório de Vulnerabilidades</div>
+    <div class="page-sub">Ambiente didático para testes de segurança ética</div>
+
+    <div id="vuln-notice">
+      <div class="icon">🛡</div>
+      <p>
+        <strong>Aviso legal:</strong> Este laboratório contém vulnerabilidades <em>intencionais</em> para fins exclusivamente didáticos.
+        As técnicas aqui demonstradas devem ser usadas somente em ambientes controlados e com autorização explícita.
+        Testar sistemas sem permissão é ilegal. Este sistema roda inteiramente no navegador — nenhum dado é enviado a servidores externos.
+      </p>
+    </div>
+
+    <!-- ═══ XSS NÍVEL 1 — FÁCIL ═══ -->
+    <div class="lab-section">
+      <div class="lab-header">
+        <h3>XSS #1 — Reflexão Direta (sem sanitização)</h3>
+        <span class="diff-tag diff-easy">FÁCIL</span>
+      </div>
+      <div class="lab-body">
+        <p>O campo abaixo reflete o input do usuário diretamente no DOM usando <code>innerHTML</code> sem nenhuma sanitização. Qualquer tag HTML é renderizada.</p>
+        <div class="lab-hint">Dica: tente injetar <code>&lt;img src=x onerror=alert('XSS1')&gt;</code></div>
+        <input class="lab-input" id="xss1-input" placeholder="Digite qualquer coisa..." oninput="xss1()">
+        <div class="lab-output" id="xss1-out">Saída aparecerá aqui...</div>
+      </div>
+    </div>
+
+    <!-- ═══ XSS NÍVEL 2 — MÉDIO ═══ -->
+    <div class="lab-section">
+      <div class="lab-header">
+        <h3>XSS #2 — Bypass de Filtro Ingênuo</h3>
+        <span class="diff-tag diff-medium">MÉDIO</span>
+      </div>
+      <div class="lab-body">
+        <p>Este campo remove a palavra <code>script</code> do input, mas o filtro é case-sensitive e remove apenas uma ocorrência. É possível contorná-lo.</p>
+        <div class="lab-hint">Dica: tente <code>&lt;SCRIPT&gt;alert('XSS2')&lt;/SCRIPT&gt;</code> ou <code>&lt;scRiPt&gt;alert('XSS2')&lt;/scRiPt&gt;</code> ou use outros vetores como <code>onerror</code></div>
+        <input class="lab-input" id="xss2-input" placeholder="Tente bypassar o filtro de 'script'...">
+        <button class="btn btn-primary btn-sm" style="margin-bottom:10px;" onclick="xss2()">Executar</button>
+        <div class="lab-output" id="xss2-out">Saída aparecerá aqui...</div>
+      </div>
+    </div>
+
+    <!-- ═══ XSS NÍVEL 3 — DIFÍCIL ═══ -->
+    <div class="lab-section">
+      <div class="lab-header">
+        <h3>XSS #3 — Stored XSS via Atributo (DOM Clobbering)</h3>
+        <span class="diff-tag diff-hard">DIFÍCIL</span>
+      </div>
+      <div class="lab-body">
+        <p>O sistema aceita um "apelido" que é inserido como atributo HTML de um elemento. Tags e caracteres <code>&lt; &gt;</code> são removidos, mas aspas e eventos HTML não são tratados.</p>
+        <div class="lab-hint">Dica: feche o atributo e injete um handler de evento. Ex: <code>" onmouseover="alert('XSS3')</code></div>
+        <input class="lab-input" id="xss3-input" placeholder='Digite um apelido (ex: João "o chefe")'>
+        <button class="btn btn-primary btn-sm" style="margin-bottom:10px;" onclick="xss3()">Salvar Apelido</button>
+        <div id="xss3-out" class="lab-output">Passe o mouse sobre o card depois de salvar...</div>
+      </div>
+    </div>
+
+    <!-- ═══ SQLi NÍVEL 1 — FÁCIL ═══ -->
+    <div class="lab-section">
+      <div class="lab-header">
+        <h3>SQL Injection #1 — Login Bypass (clássico)</h3>
+        <span class="diff-tag diff-easy">FÁCIL</span>
+      </div>
+      <div class="lab-body">
+        <p>Este formulário de login simula uma query SQL sem prepared statements. O input é concatenado diretamente na query:</p>
+        <p><code>SELECT * FROM users WHERE login='[INPUT]' AND senha='[PASS]'</code></p>
+        <div class="lab-hint">Dica de usuário: <code>' OR '1'='1</code> — a senha pode ser qualquer coisa</div>
+        <input class="lab-input" id="sqli1-user" placeholder="Usuário (tente a injeção aqui)">
+        <input class="lab-input" id="sqli1-pass" placeholder="Senha (qualquer valor)">
+        <button class="btn btn-primary btn-sm" style="margin-bottom:10px;" onclick="sqli1()">Login Simulado</button>
+        <div class="lab-output" id="sqli1-out">Resultado da query aparecerá aqui...</div>
+      </div>
+    </div>
+
+    <!-- ═══ SQLi NÍVEL 2 — MÉDIO ═══ -->
+    <div class="lab-section">
+      <div class="lab-header">
+        <h3>SQL Injection #2 — UNION-based Data Extraction</h3>
+        <span class="diff-tag diff-medium">MÉDIO</span>
+      </div>
+      <div class="lab-body">
+        <p>A busca de produtos usa a query: <code>SELECT id,nome,categoria FROM produtos WHERE nome LIKE '%[INPUT]%'</code></p>
+        <p>Com UNION SELECT é possível extrair dados de outras tabelas. O número de colunas deve ser o mesmo (3 colunas).</p>
+        <div class="lab-hint">Dica: <code>' UNION SELECT id,login,senha FROM users-- </code></div>
+        <input class="lab-input" id="sqli2-input" placeholder="Busca de produto (injete aqui)">
+        <button class="btn btn-primary btn-sm" style="margin-bottom:10px;" onclick="sqli2()">Buscar</button>
+        <div class="lab-output" id="sqli2-out">Resultados aparecerão aqui...</div>
+      </div>
+    </div>
+
+    <!-- ═══ SQLi NÍVEL 3 — DIFÍCIL ═══ -->
+    <div class="lab-section">
+      <div class="lab-header">
+        <h3>SQL Injection #3 — Blind Boolean-based</h3>
+        <span class="diff-tag diff-hard">DIFÍCIL</span>
+      </div>
+      <div class="lab-body">
+        <p>O sistema retorna apenas "Encontrado" ou "Não encontrado" — sem dados diretamente. Porém, é possível extrair informações fazendo perguntas true/false sobre os dados.</p>
+        <p>Query: <code>SELECT 1 FROM users WHERE id=1 AND [SUA CONDIÇÃO]</code></p>
+        <div class="lab-hint">Dica: tente <code>1 AND SUBSTRING(senha,1,1)='a'</code> — varie o caractere até receber "Encontrado". Simule a extração letra por letra.</div>
+        <input class="lab-input" id="sqli3-input" placeholder="Ex: 1 AND SUBSTRING(login,1,1)='a'">
+        <button class="btn btn-primary btn-sm" style="margin-bottom:10px;" onclick="sqli3()">Testar Condição</button>
+        <div class="lab-output" id="sqli3-out">Resultado aparecerá aqui...</div>
+        <div style="margin-top:14px;">
+          <p style="margin-bottom:8px;"><strong style="color:var(--text)">Extrator automático (demonstração didática):</strong></p>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+            <select class="lab-input" id="sqli3-col" style="width:160px;margin-bottom:0;">
+              <option value="login">login</option>
+              <option value="senha">senha</option>
+              <option value="nome">nome</option>
+            </select>
+            <input class="lab-input" id="sqli3-uid" placeholder="ID do user (1-5)" style="width:140px;margin-bottom:0;" value="1">
+            <button class="btn btn-primary btn-sm" onclick="sqli3Extract()">Extrair</button>
+          </div>
+          <div class="lab-output" id="sqli3-extract">O extrator mostrará o processo aqui...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SQLi NÍVEL 4 — EXTRA DIFÍCIL ═══ -->
+    <div class="lab-section">
+      <div class="lab-header">
+        <h3>SQL Injection #4 — Second-Order Injection</h3>
+        <span class="diff-tag diff-hard">DIFÍCIL</span>
+      </div>
+      <div class="lab-body">
+        <p>A injeção de segunda ordem ocorre quando um payload é <em>armazenado</em> sem execução imediata, e só é explorado quando o dado é recuperado e usado em outra query posteriormente.</p>
+        <p>Passo 1: cadastre um usuário com login <code>admin'--</code>. Passo 2: o sistema usa o login armazenado para construir uma query de busca de perfil. O payload é executado na segunda query.</p>
+        <div class="lab-hint">Dica: cadastre o login <code>admin'--</code> e clique em "Buscar Perfil". Observe que a segunda query se torna: <code>SELECT * FROM users WHERE login='admin'--'</code> ignorando o resto.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <p style="color:var(--text);margin-bottom:8px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Passo 1 — Cadastro:</p>
+            <input class="lab-input" id="sqli4-login" placeholder="Login (injete aqui)" value="admin'--">
+            <input class="lab-input" id="sqli4-senha" placeholder="Senha qualquer" value="qualquer">
+            <button class="btn btn-primary btn-sm" style="margin-bottom:10px;" onclick="sqli4Register()">Cadastrar</button>
+          </div>
+          <div>
+            <p style="color:var(--text);margin-bottom:8px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;">Passo 2 — Segunda Query:</p>
+            <button class="btn btn-primary btn-sm" style="margin-bottom:10px;display:block;" onclick="sqli4Lookup()">Buscar Perfil do Usuário Cadastrado</button>
+            <p style="font-size:12px;color:var(--muted);">Usa o login cadastrado na etapa anterior para montar a query.</p>
+          </div>
+        </div>
+        <div class="lab-output" id="sqli4-out">Resultados aparecerão aqui...</div>
+      </div>
+    </div>
+
+  </div><!-- /page-lab -->
+</div><!-- /main-panel -->
+
+<!-- MODAL -->
+<div id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">Confirmar</h3>
+    <p id="modal-body" style="font-size:13px;color:var(--muted);line-height:1.6;"></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()" style="background:var(--surface2);color:var(--text);">Cancelar</button>
+      <button class="btn btn-danger" id="modal-confirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATABASE SIMULADO (em memória — sem backend)
+// ═══════════════════════════════════════════════
+const DB = {
+  users: [
+    { id:1, nome:"Administrador",  login:"admin",  senha:"admin123",  email:"admin@corpsys.local",  perfil:"admin", dept:"TI",        status:"active" },
+    { id:2, nome:"João Oliveira",  login:"joao",   senha:"senha123",  email:"joao@corpsys.local",   perfil:"user",  dept:"Financeiro", status:"active" },
+    { id:3, nome:"Maria Souza",    login:"maria",  senha:"maria456",  email:"maria@corpsys.local",  perfil:"user",  dept:"RH",         status:"active" },
+    { id:4, nome:"Carlos Lima",    login:"carlos", senha:"carlos789", email:"carlos@corpsys.local", perfil:"user",  dept:"Comercial",  status:"inactive" },
+    { id:5, nome:"Ana Pereira",    login:"ana",    senha:"ana2024",   email:"ana@corpsys.local",    perfil:"user",  dept:"TI",         status:"active" },
+  ],
+  produtos: [
+    { id:1, nome:"Notebook Dell",    categoria:"Hardware",  preco:4500.00, estoque:12 },
+    { id:2, nome:"Mouse Logitech",   categoria:"Hardware",  preco:150.00,  estoque:50 },
+    { id:3, nome:"Licença Office",   categoria:"Software",  preco:899.00,  estoque:99 },
+    { id:4, nome:"Monitor 24\"",     categoria:"Hardware",  preco:1200.00, estoque:8  },
+    { id:5, nome:"Antivírus Pro",    categoria:"Segurança", preco:299.00,  estoque:30 },
+    { id:6, nome:"Switch 8 portas",  categoria:"Rede",      preco:320.00,  estoque:5  },
+    { id:7, nome:"Cabo HDMI 2m",     categoria:"Acessório", preco:35.00,   estoque:200},
+    { id:8, nome:"Teclado Mecânico", categoria:"Hardware",  preco:420.00,  estoque:20 },
+  ],
+  avisos: [],
+  nextUserId: 6,
+  nextProdId: 9,
+  sqli4_staged: null,
+};
+
+let currentUser = null;
+
+// ═══════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value.trim();
+  // Login legítimo — sem vulnerabilidade aqui propositalmente
+  const found = DB.users.find(x => x.login === u && x.senha === p);
+  if (found) {
+    currentUser = found;
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('topbar').style.display = 'flex';
+    document.getElementById('main-panel').style.display = 'block';
+    document.getElementById('current-user-display').textContent = found.login + (found.perfil==='admin' ? ' [ADMIN]' : '');
+    showPage('dashboard');
+    renderUserTable();
+    renderProdutoTable();
+    renderAvisos();
+  } else {
+    const err = document.getElementById('login-error');
+    err.style.display = 'block';
+    setTimeout(() => err.style.display='none', 3000);
+  }
+}
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('topbar').style.display = 'none';
+  document.getElementById('main-panel').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#topbar .nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+//  USUÁRIOS
+// ═══════════════════════════════════════════════
+function renderUserTable() {
+  const tbody = document.getElementById('user-table-body');
+  tbody.innerHTML = DB.users.map(u => `
+    <tr>
+      <td style="font-family:var(--mono);color:var(--muted)">${u.id}</td>
+      <td>${u.nome}</td>
+      <td style="font-family:var(--mono)">${u.login}</td>
+      <td style="font-family:var(--mono);color:var(--accent2)">${u.senha}</td>
+      <td>${u.email}</td>
+      <td><span class="badge ${u.perfil}">${u.perfil}</span></td>
+      <td>${u.dept}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Excluir</button></td>
+    </tr>`).join('');
+}
+
+function addUser() {
+  const nome  = document.getElementById('u-nome').value.trim();
+  const login = document.getElementById('u-login').value.trim();
+  const senha = document.getElementById('u-senha').value.trim();
+  const perfil= document.getElementById('u-perfil').value;
+  const email = document.getElementById('u-email').value.trim();
+  const dept  = document.getElementById('u-dept').value.trim();
+  if (!nome||!login||!senha) return alert('Preencha Nome, Login e Senha.');
+  DB.users.push({ id: DB.nextUserId++, nome, login, senha, email, perfil, dept, status:'active' });
+  renderUserTable();
+  ['u-nome','u-login','u-senha','u-email','u-dept'].forEach(id => document.getElementById(id).value='');
+}
+
+let deleteTarget = null;
+function deleteUser(id) {
+  deleteTarget = id;
+  const u = DB.users.find(x=>x.id===id);
+  document.getElementById('modal-title').textContent = 'Excluir Usuário';
+  document.getElementById('modal-body').textContent = `Tem certeza que deseja excluir o usuário "${u.nome}" (${u.login})?`;
+  document.getElementById('modal-confirm').onclick = () => {
+    DB.users = DB.users.filter(x=>x.id!==id);
+    renderUserTable();
+    closeModal();
+  };
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+// ═══════════════════════════════════════════════
+//  PRODUTOS
+// ═══════════════════════════════════════════════
+function renderProdutoTable() {
+  const tbody = document.getElementById('produto-table-body');
+  tbody.innerHTML = DB.produtos.map(p => `
+    <tr>
+      <td style="font-family:var(--mono);color:var(--muted)">${p.id}</td>
+      <td>${p.nome}</td>
+      <td>${p.categoria}</td>
+      <td style="font-family:var(--mono)">R$ ${p.preco.toFixed(2)}</td>
+      <td style="font-family:var(--mono)">${p.estoque}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteProd(${p.id})">Excluir</button></td>
+    </tr>`).join('');
+}
+
+function addProduto() {
+  const nome  = document.getElementById('p-nome').value.trim();
+  const cat   = document.getElementById('p-cat').value.trim();
+  const preco = parseFloat(document.getElementById('p-preco').value) || 0;
+  const est   = parseInt(document.getElementById('p-estoque').value) || 0;
+  if (!nome) return alert('Informe o nome do produto.');
+  DB.produtos.push({ id: DB.nextProdId++, nome, categoria: cat, preco, estoque: est });
+  renderProdutoTable();
+  ['p-nome','p-cat','p-preco','p-estoque','p-desc'].forEach(id => document.getElementById(id).value='');
+}
+
+function deleteProd(id) {
+  DB.produtos = DB.produtos.filter(x=>x.id!==id);
+  renderProdutoTable();
+}
+
+// ═══════════════════════════════════════════════
+//  RELATÓRIOS — VULN: SQL INJECTION via busca
+// ═══════════════════════════════════════════════
+function reportSearch() {
+  const input = document.getElementById('report-search').value;
+  const out   = document.getElementById('report-output');
+
+  // SIMULA: SELECT * FROM users WHERE nome LIKE '%input%' OR login LIKE '%input%'
+  // Vulnerabilidade: input não é sanitizado → SQL injection simulado
+  const queryDisplay = `SELECT id,nome,login,senha,email,dept FROM users WHERE nome LIKE '%${input}%' OR login LIKE '%${input}%'`;
+
+  // Detecta UNION injection
+  if (/union\s+select/i.test(input)) {
+    // extrai colunas do UNION SELECT
+    const m = input.match(/union\s+select\s+(.+)/i);
+    if (m) {
+      const cols = m[1].replace(/--.*$/,'').split(',').map(s=>s.trim());
+      let rows = DB.users.map(u => {
+        const vals = cols.map(c => {
+          if (c==='id') return u.id;
+          if (c==='nome') return u.nome;
+          if (c==='login') return u.login;
+          if (c==='senha') return u.senha;
+          if (c==='email') return u.email;
+          if (c==='dept') return u.dept;
+          if (c==='perfil') return u.perfil;
+          return c.replace(/['"]/g,''); // literal
+        });
+        return vals.join(' | ');
+      });
+      out.className='lab-output success';
+      out.innerHTML = `<strong style="color:var(--warn)">⚠ UNION Injection detectada — dados extraídos:</strong><br><code>${queryDisplay}</code><br><br>${rows.map(r=>'→ '+r).join('<br>')}`;
+      return;
+    }
+  }
+
+  // Tautologia: OR '1'='1
+  if (/'\s*or\s*'1'\s*=\s*'1/i.test(input) || /'\s*or\s*1\s*=\s*1/i.test(input)) {
+    out.className='lab-output success';
+    out.innerHTML = `<strong style="color:var(--warn)">⚠ Tautologia detectada — todos os registros retornados:</strong><br><code>${queryDisplay}</code><br><br>` +
+      DB.users.map(u=>`→ [${u.id}] ${u.nome} | ${u.login} | ${u.senha} | ${u.email}`).join('<br>');
+    return;
+  }
+
+  // Busca normal
+  const results = DB.users.filter(u =>
+    u.nome.toLowerCase().includes(input.toLowerCase()) ||
+    u.login.toLowerCase().includes(input.toLowerCase())
+  );
+
+  if (results.length === 0) {
+    out.className='lab-output error';
+    out.textContent = `Nenhum resultado para: "${input}"`;
+  } else {
+    out.className='lab-output';
+    out.innerHTML = `<code>${queryDisplay}</code><br><br>` +
+      results.map(u=>`→ [${u.id}] ${u.nome} | ${u.login} | ${u.senha}`).join('<br>');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  AVISOS — VULN: XSS STORED (innerHTML)
+// ═══════════════════════════════════════════════
+function postAviso() {
+  const val = document.getElementById('aviso-input').value;
+  if (!val.trim()) return;
+  DB.avisos.push({ autor: currentUser.login, texto: val, ts: new Date().toLocaleTimeString('pt-BR') });
+  document.getElementById('aviso-input').value = '';
+  renderAvisos();
+}
+
+function renderAvisos() {
+  const list = document.getElementById('avisos-list');
+  if (DB.avisos.length === 0) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--muted);">Nenhum aviso publicado.</div>';
+    return;
+  }
+  // ⚠ VULNERABILIDADE XSS: innerHTML sem sanitização
+  list.innerHTML = DB.avisos.map(a => `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${a.autor} · ${a.ts}</div>
+      <div style="font-size:13px;line-height:1.6;">${a.texto}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  LAB — XSS #1: Reflexão direta
+// ═══════════════════════════════════════════════
+function xss1() {
+  const v = document.getElementById('xss1-input').value;
+  // ⚠ innerHTML direto — vulnerável
+  document.getElementById('xss1-out').innerHTML = v;
+}
+
+// ═══════════════════════════════════════════════
+//  LAB — XSS #2: Filtro ingênuo
+// ═══════════════════════════════════════════════
+function xss2() {
+  let v = document.getElementById('xss2-input').value;
+  // Filtro fraco: apenas remove "script" case-sensitive uma vez
+  v = v.replace('script','').replace('Script','').replace('SCRIPT','');
+  // Ainda usa innerHTML — bypass trivial com capitalização mista
+  const out = document.getElementById('xss2-out');
+  out.className = 'lab-output';
+  out.innerHTML = `Após filtro: ${v}`;
+}
+
+// ═══════════════════════════════════════════════
+//  LAB — XSS #3: Injeção em atributo
+// ═══════════════════════════════════════════════
+function xss3() {
+  let apelido = document.getElementById('xss3-input').value;
+  // Remove < e > mas deixa aspas e eventos passarem
+  apelido = apelido.replace(/</g,'').replace(/>/g,'');
+  const out = document.getElementById('xss3-out');
+  // ⚠ atributo injetado diretamente — vulnerável a fechar o atributo
+  out.innerHTML = `<div style="padding:12px;background:var(--surface2);border-radius:6px;cursor:pointer;" title="${apelido}">
+    Card do usuário — passe o mouse para ver o apelido (ou acione o evento injetado): <strong>${apelido}</strong>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  LAB — SQLi #1: Login Bypass
+// ═══════════════════════════════════════════════
+function sqli1() {
+  const u = document.getElementById('sqli1-user').value;
+  const p = document.getElementById('sqli1-pass').value;
+  const out = document.getElementById('sqli1-out');
+
+  const query = `SELECT * FROM users WHERE login='${u}' AND senha='${p}'`;
+
+  // Simula bypass: tautologia no login
+  if (/'\s*or\s*/i.test(u)) {
+    out.className='lab-output success';
+    out.innerHTML = `<strong style="color:var(--warn)">⚠ SQL Injection bem-sucedida! Login bypassed.</strong><br>` +
+      `Query executada: <code>${query}</code><br><br>` +
+      `Usuário retornado: <strong>${DB.users[0].login}</strong> (primeiro registro da tabela)<br>` +
+      `Senha: <strong>${DB.users[0].senha}</strong><br>Perfil: <strong>${DB.users[0].perfil}</strong>`;
+    return;
+  }
+
+  // Login normal
+  const found = DB.users.find(x => x.login===u && x.senha===p);
+  if (found) {
+    out.className='lab-output success';
+    out.innerHTML = `Login OK (sem injeção).<br>Query: <code>${query}</code>`;
+  } else {
+    out.className='lab-output error';
+    out.innerHTML = `Login falhou.<br>Query: <code>${query}</code>`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  LAB — SQLi #2: UNION-based
+// ═══════════════════════════════════════════════
+function sqli2() {
+  const input = document.getElementById('sqli2-input').value;
+  const out   = document.getElementById('sqli2-out');
+  const query = `SELECT id,nome,categoria FROM produtos WHERE nome LIKE '%${input}%'`;
+
+  if (/union\s+select/i.test(input)) {
+    const m = input.match(/union\s+select\s+(.+)/i);
+    if (m) {
+      const cols = m[1].replace(/--.*$/,'').split(',').map(s=>s.trim());
+      const exfil = DB.users.map(u => {
+        return cols.map(c => {
+          if (c==='id') return u.id;
+          if (c==='login') return u.login;
+          if (c==='senha') return u.senha;
+          if (c==='nome') return u.nome;
+          if (c==='email') return u.email;
+          return c.replace(/['"]/g,'');
+        }).join(' | ');
+      });
+      out.className='lab-output success';
+      out.innerHTML = `<strong style="color:var(--warn)">⚠ UNION Injection — dados de outra tabela extraídos:</strong><br>` +
+        `<code>${query}</code><br><br>` +
+        exfil.map(r=>'→ '+r).join('<br>');
+      return;
+    }
+  }
+
+  const results = DB.produtos.filter(p=>p.nome.toLowerCase().includes(input.toLowerCase()));
+  out.className = results.length?'lab-output':'lab-output error';
+  out.innerHTML = `<code>${query}</code><br><br>` +
+    (results.length ? results.map(p=>`→ [${p.id}] ${p.nome} | ${p.categoria}`).join('<br>') : 'Nenhum produto encontrado.');
+}
+
+// ═══════════════════════════════════════════════
+//  LAB — SQLi #3: Blind Boolean
+// ═══════════════════════════════════════════════
+function sqli3() {
+  const cond = document.getElementById('sqli3-input').value.trim();
+  const out  = document.getElementById('sqli3-out');
+
+  // Simula: SELECT 1 FROM users WHERE id=1 AND [cond]
+  const query = `SELECT 1 FROM users WHERE id=1 AND ${cond}`;
+
+  // Parser simplificado para SUBSTRING(col,pos,1)='char'
+  const m = cond.match(/SUBSTRING\((\w+),(\d+),1\)\s*=\s*'(.)'/i);
+  if (m) {
+    const col  = m[1]; // ex: senha
+    const pos  = parseInt(m[2]) - 1;
+    const char = m[3];
+    const user = DB.users.find(u=>u.id===1);
+    const actual = user ? (user[col]||'')[pos] : undefined;
+    if (actual !== undefined && actual === char) {
+      out.className='lab-output success';
+      out.innerHTML = `<strong style="color:var(--accent)">Encontrado</strong> (condição verdadeira)<br><code>${query}</code><br><br>→ SUBSTRING(${col},${pos+1},1) = '${char}' ✓`;
+    } else {
+      out.className='lab-output error';
+      out.innerHTML = `<strong style="color:var(--accent2)">Não encontrado</strong> (condição falsa)<br><code>${query}</code>`;
+    }
+    return;
+  }
+
+  // Condição 1=1 ou similar
+  if (/1\s*=\s*1|true/i.test(cond)) {
+    out.className='lab-output success';
+    out.innerHTML = `<strong style="color:var(--accent)">Encontrado</strong><br><code>${query}</code>`;
+  } else if (/1\s*=\s*2|false/i.test(cond)) {
+    out.className='lab-output error';
+    out.innerHTML = `<strong style="color:var(--accent2)">Não encontrado</strong><br><code>${query}</code>`;
+  } else {
+    out.className='lab-output';
+    out.innerHTML = `<code>${query}</code><br><br>Use formato: <code>SUBSTRING(coluna,posição,1)='letra'</code>`;
+  }
+}
+
+async function sqli3Extract() {
+  const col = document.getElementById('sqli3-col').value;
+  const uid = parseInt(document.getElementById('sqli3-uid').value) || 1;
+  const out = document.getElementById('sqli3-extract');
+
+  const user = DB.users.find(u=>u.id===uid);
+  if (!user) { out.innerHTML='Usuário não encontrado.'; return; }
+
+  const target = (user[col] || '');
+  out.className='lab-output';
+  out.innerHTML = 'Extraindo caractere por caractere...<br>';
+
+  let extracted = '';
+  for (let i = 0; i < target.length; i++) {
+    // Simula delay como se fossem requests reais
+    await new Promise(r=>setTimeout(r, 80));
+    const char = target[i];
+    extracted += char;
+    out.innerHTML = `Testando SUBSTRING(${col},${i+1},1) = '?' ...<br>` +
+      `→ Encontrado: <strong style="color:var(--accent)">'${char}'</strong><br>` +
+      `Extraído até agora: <code style="color:var(--warn)">${extracted}</code>`;
+  }
+  out.className='lab-output success';
+  out.innerHTML += `<br><br><strong style="color:var(--accent)">✓ Extração completa:</strong> <code style="color:var(--warn);font-size:14px;">${extracted}</code>`;
+}
+
+// ═══════════════════════════════════════════════
+//  LAB — SQLi #4: Second-Order
+// ═══════════════════════════════════════════════
+function sqli4Register() {
+  const login = document.getElementById('sqli4-login').value;
+  const senha = document.getElementById('sqli4-senha').value;
+  DB.sqli4_staged = { login, senha };
+  const out = document.getElementById('sqli4-out');
+  out.className='lab-output';
+  out.innerHTML = `Usuário armazenado com login: <code>${login}</code><br>` +
+    `(payload armazenado sem execução — primeira fase da injeção de segunda ordem)<br><br>` +
+    `Agora clique em "Buscar Perfil" para executar a segunda query.`;
+}
+
+function sqli4Lookup() {
+  const out = document.getElementById('sqli4-out');
+  if (!DB.sqli4_staged) {
+    out.innerHTML='Cadastre um usuário primeiro.'; return;
+  }
+
+  const storedLogin = DB.sqli4_staged.login;
+  // Segunda query — usa o login armazenado diretamente (sem sanitização)
+  const query = `SELECT * FROM users WHERE login='${storedLogin}'`;
+
+  // Se login contém admin'-- → bypass: retorna admin
+  if (/admin'--/i.test(storedLogin) || /admin'\s*--/i.test(storedLogin)) {
+    const admin = DB.users.find(u=>u.perfil==='admin');
+    out.className='lab-output success';
+    out.innerHTML = `<strong style="color:var(--warn)">⚠ Second-Order Injection bem-sucedida!</strong><br>` +
+      `O payload foi armazenado na fase 1 e executado na fase 2.<br><br>` +
+      `Query resultante: <code>${query}</code><br>` +
+      `→ O comentário <code>--</code> neutraliza o resto da query.<br><br>` +
+      `<strong>Dados do admin extraídos:</strong><br>` +
+      `Login: <code>${admin.login}</code><br>` +
+      `Senha: <code style="color:var(--accent2)">${admin.senha}</code><br>` +
+      `E-mail: <code>${admin.email}</code>`;
+    return;
+  }
+
+  const found = DB.users.find(u=>u.login===storedLogin);
+  out.className = found?'lab-output':'lab-output error';
+  out.innerHTML = `Query: <code>${query}</code><br><br>` +
+    (found ? `Usuário: ${found.nome} | Perfil: ${found.perfil}` : 'Usuário não encontrado (sem injeção).');
+}
+</script>
+</body>
+</html>
